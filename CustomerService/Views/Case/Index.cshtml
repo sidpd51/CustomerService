@@ -1,0 +1,38 @@
+﻿@model List<CaseModel>
+<div class="container">
+    <div class="row pt-4 pb-3">
+        <div class="col-6">
+            <h2 class="text-primary">Case List</h2>
+        </div>
+        <div class="col-6 text-end">
+            <a asp-controller="Case" asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Create New Case</a>
+        </div>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Case Number</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Owner</th>
+                <th>Created On</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var caseModel in Model)
+            {
+                <tr>
+                    <td>@caseModel.Title</td>
+                    <td>@caseModel.Description</td>
+                    <td>@caseModel.CaseNumber</td>
+                    <td>@caseModel.Priority</td>
+                    <td>@caseModel.Status</td>
+                    <td>@caseModel.Owner</td>
+                    <td>@caseModel.CreatedOn.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
