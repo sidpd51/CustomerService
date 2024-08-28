@@ -23,5 +23,15 @@ namespace CustomerService
             };
             return _serviceClient.RetrieveMultiple(query);
         }
+
+        public Guid CreateEntity (Entity entity)
+        {
+            if(_serviceClient == null)
+            {
+                throw new InvalidOperationException("Dataverse service client is not initialized.");
+            }
+
+            return _serviceClient.Create(entity);
+        }
     }
 }

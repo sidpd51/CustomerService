@@ -1,5 +1,6 @@
 ﻿using CustomerService.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
@@ -36,6 +37,38 @@ namespace CustomerService.Controllers
             }).ToList();
             
             return View(caseList);
+        }
+
+        public IActionResult Create()
+        {
+            var accounts = _dataverseService.RetrieveEtities("account", new ColumnSet("name", "accountid"));
+
+            ViewBag.Accounts = new SelectList(accounts.Entities.Select(a => new { 
+                Id = a.Id,
+                Name = a.GetAttributeValue<string>("name")
+            }), "Id","Name");
+
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Create(CaseModel model)
+        {
+           
+                Entity newCase = new Entity("incident");
+                newCase["title"] = model.Title;
+                newCase["description"] = model.Description;
+                newCase["prioritycode"] = model.Priority;
+                if (!string.IsNullOrEmpty(model.Customer))
+                {
+                    newCase["customerid"] = new EntityReference("account",Guid.Parse(model.Customer));    
+                }
+                
+                var caseId = _dataverseService.CreateEntity(newCase);
+
+
+
+            return RedirectToAction("Index");
         }
     }
 }
