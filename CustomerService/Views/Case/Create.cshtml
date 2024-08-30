@@ -7,27 +7,31 @@
             <hr />
             <div class="mb-3 row ps-4">
                 <label asp-for="Title" class="p-0 mb-1"></label>
-                <input asp-for="Title" class="form-control"/>
+                <input asp-for="Title" class="form-control mb-2"/>
+                <span asp-validation-for="Title" class="text-danger"></span>
             </div>
             <div class="mb-3 row ps-4">
                 <label asp-for="Description" class="p-0 mb-1"></label>
-                <input asp-for="Description" class="form-control" />
+                <input asp-for="Description" class="form-control mb-2" />
+                <span asp-validation-for="Description" class="text-danger"></span>
             </div>
             <div class="mb-3 row ps-4">
                 <div class="col-6 p-0">
                     <label asp-for="Priority" class="p-0 mb-1"></label>
-                    <select asp-for="Priority" class="form-control">
+                    <select asp-for="Priority" class="form-control mb-2">
                         <option value="1">High</option>
                         <option value="2">Normal</option>
                         <option value="3">Low</option>
                     </select>
+                    <span asp-validation-for="Priority" class="text-danger"></span>
                 </div>
                 <div class="col-6 p-0">
-                    <div class="mb-3 row ps-4">
+                    <div class="ps-4">
                         <label asp-for="Customer" class="p-0 mb-1"></label>
-                        <select asp-for="Customer" class="form-control" asp-items="ViewBag.Accounts">
+                        <select asp-for="Customer" class="form-control mb-2" asp-items="ViewBag.Accounts">
                             <option value="">Select a Customer</option>
                         </select>
+                        <span asp-validation-for="Customer" class="text-danger"></span>
                     </div>
                 </div>
             </div>
@@ -42,3 +46,9 @@
         </div>
     </div>
 </form>
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial"></partial>
+    }
+}
