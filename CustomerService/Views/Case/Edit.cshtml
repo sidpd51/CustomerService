@@ -3,7 +3,7 @@
 <form method="post">
     <div class="border p-3 mt-4">
         <div class="row pb-2">
-            <h2 class="text-primary">Edit Case</h2>
+            <h2 class="text-primary">Update Case</h2>
             <input asp-for="CaseId" class="d-none"/>
             <hr />
             <div class="mb-3 row ps-4">
@@ -46,7 +46,7 @@
             </div>
             <div class="row">
                 <div class="col-6 col-md-3">
-                    <button type="submit" class="btn btn-primary form-control">Edit</button>
+                    <button type="submit" class="btn btn-primary form-control">Update</button>
                 </div>
                 <div class="col-6 col-md-3">
                     <a asp-controller="Case" asp-action="Resolve" asp-route-id="@Model.CaseId" class="btn btn-primary border form-control">Resolve</a>
