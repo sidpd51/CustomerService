@@ -19,26 +19,34 @@ namespace CustomerService.Controllers
         
         public IActionResult Index()
         {
-            var columns = new ColumnSet("title","description", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
+            
+            return View();
+        }
+
+        public IActionResult GetAllCases()
+         {
+            var columns = new ColumnSet("title", "description", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
 
             var cases = _dataverseService.RetrieveEtities("incident", columns);
+            var currentUser = _dataverseService.GetCurrentUserId();
 
             var caseList = cases.Entities.Select(e => new CaseModel
             {
-                CaseId=e.Id,
+                CaseId = e.Id,
                 Title = e.GetAttributeValue<string>("title"),
                 Description = e.GetAttributeValue<string>("description"),
                 CaseNumber = e.GetAttributeValue<string>("ticketnumber"),
                 Priority = e.FormattedValues.ContainsKey("prioritycode") ? e.FormattedValues["prioritycode"] : string.Empty,
                 Status = e.FormattedValues.ContainsKey("statuscode") ? e.FormattedValues["statuscode"] : string.Empty,
-                Owner = e.GetAttributeValue<EntityReference>("ownerid")?.Name,
-                CreatedOn = e.GetAttributeValue<DateTime>("createdon")
-               
+                Owner = e.GetAttributeValue<EntityReference>("ownerid")?.Id.ToString(),
+                CreatedOn = e.GetAttributeValue<DateTime>("createdon"),
+                UserId = currentUser
 
             }).ToList();
-            
-            return View(caseList);
+
+            return new JsonResult(caseList);
         }
+
 
         public IActionResult Create()
         {

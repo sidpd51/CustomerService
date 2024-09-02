@@ -32,5 +32,7 @@ namespace CustomerService.Models
         [Required]
         public string Customer { get; set; }
 
+        public Guid UserId {  get; set; }
+
     }
 }

@@ -27,6 +27,13 @@ namespace CustomerService
             return _serviceClient.RetrieveMultiple(query);
         }
 
+        public Guid GetCurrentUserId()
+        {
+            var request = new WhoAmIRequest();
+            var response = (WhoAmIResponse)_serviceClient.Execute(request);
+            return response.UserId;
+        }
+
         public Guid CreateEntity (Entity entity)
         {
             if(_serviceClient == null)
