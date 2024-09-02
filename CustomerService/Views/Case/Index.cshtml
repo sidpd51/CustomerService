@@ -9,14 +9,13 @@
             <a asp-controller="Case" asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Create New Case</a>
         </div>
     </div>
-    <table class="table table-bordered table-striped">
+    <table class="table table-bordered table-striped" id="dataTable">
         <thead>
             <tr>
                 <th>Title</th>
                 <th>Case Number</th>
                 <th>Priority</th>
                 <th>Status</th>
-                <th>Owner</th>
                 <th>Created On</th>
                 <th>Operations</th>
             </tr>
@@ -29,7 +28,6 @@
                     <td>@caseModel.CaseNumber</td>
                     <td>@caseModel.Priority</td>
                     <td>@caseModel.Status</td>
-                    <td>@caseModel.Owner</td>
                     <td>@caseModel.CreatedOn.ToString("yyyy-MM-dd HH:mm")</td>
                     <td>
                         <div class="w-75 btn-group" role="group">
@@ -46,3 +44,7 @@
         </tbody>
     </table>
 </div>
+
+@section scripts {
+    <script src="~/js/datatable_file.js"></script>
+}
