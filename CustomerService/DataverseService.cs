@@ -27,6 +27,56 @@ namespace CustomerService
             return _serviceClient.RetrieveMultiple(query);
         }
 
+        public EntityCollection RetrieveEntities(string entityName, ColumnSet columns, string filter = null, string sortColumn = null, bool sortDescending = false, int pageNumber = 1,int pageSize = 50)
+        {
+
+            var query = new QueryExpression(entityName)
+            {
+                ColumnSet = columns,
+                PageInfo = new PagingInfo
+                {
+                    PageNumber = pageNumber,
+                    Count = pageSize
+                }
+            };
+
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                query.Orders.Add(new OrderExpression(sortColumn, sortDescending ? OrderType.Descending : OrderType.Ascending));
+            }
+
+            // Apply filtering if specified
+            if (!string.IsNullOrEmpty(filter))
+            {
+                var filterExpression = new FilterExpression(LogicalOperator.Or);
+
+                // Use filter to match string fields
+                filterExpression.AddCondition(new ConditionExpression("title", ConditionOperator.Like, $"%{filter}%"));
+                filterExpression.AddCondition(new ConditionExpression("description", ConditionOperator.Like, $"%{filter}%"));
+                filterExpression.AddCondition(new ConditionExpression("ticketnumber", ConditionOperator.Like, $"%{filter}%"));
+
+                // Add conditions for OptionSetValue fields
+                if (int.TryParse(filter, out int filterValue))
+                {
+                    filterExpression.AddCondition(new ConditionExpression("prioritycode", ConditionOperator.Equal, filterValue));
+                    filterExpression.AddCondition(new ConditionExpression("statuscode", ConditionOperator.Equal, filterValue));
+                }
+                else
+                {
+                    // Add conditions for OptionSetValue fields if filter is not numeric
+                    filterExpression.AddCondition(new ConditionExpression("prioritycode", ConditionOperator.Like, $"%{filter}%"));
+                    filterExpression.AddCondition(new ConditionExpression("statuscode", ConditionOperator.Like, $"%{filter}%"));
+                }
+
+                query.Criteria = filterExpression;
+            }
+
+            // Execute the query and retrieve results
+            var result = _serviceClient.RetrieveMultiple(query);
+            return result;
+        }
+
+
         public Guid GetCurrentUserId()
         {
             var request = new WhoAmIRequest();
