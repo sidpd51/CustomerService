@@ -15,6 +15,7 @@
                 { data: "status", name: "Status" },
                 {
                     data: "createdOn",
+                    name: "CreatedOn",
                     render: function (data, type, row, meta) {
                         return new Date(row.createdOn).toLocaleDateString("en-GB")
                     }

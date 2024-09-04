@@ -74,7 +74,49 @@ namespace CustomerService
       //      }
             
       //  }
+        
+        public EntityCollection QualiableData(string entityName,int skip, int pageSize, ColumnSet columns,string sortColumn, string sortDescending, string filter)
+        {
+            var orderBy = (sortDescending == "asc" ? OrderType.Ascending : OrderType.Descending);
+            string orderCol = sortColumn.ToLower();
+            var query = new QueryExpression(entityName) {
+                ColumnSet = columns,
+                Distinct = false,
+                Criteria =
+                {
+                    Filters =
+                    {
+                        new FilterExpression
+                        {
+                            FilterOperator = LogicalOperator.Or,
+                            Conditions =
+                            {
+                                new ConditionExpression(
+                                    attributeName: "title",
+                                    conditionOperator: ConditionOperator.Like,
+                                    values: new[] { "%" + filter + "%" }
+                                    ),
+                                new ConditionExpression(
+                                    attributeName: "ticketnumber",
+                                    conditionOperator: ConditionOperator.Like,
+                                    values: new[] { "%" + filter + "%" }
+                                    )
+                            }
+                        }
+                    }
+                },
+                PageInfo =
+                {
+                    Count=pageSize,
+                    PageNumber=(skip/pageSize)+1,
+                    ReturnTotalRecordCount =true
+                }
+            };
+            query.AddOrder(attributeName: orderCol, orderType: orderBy);
+            
 
+            return _serviceClient.RetrieveMultiple(query);
+        }
 
         public Guid CreateEntity (Entity entity)
         {

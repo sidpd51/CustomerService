@@ -80,7 +80,7 @@ namespace CustomerService.Controllers
         
         [HttpPost]
         public JsonResult GetAllCases()
-        {
+{
 
             int totalRecord = 0;
             int filterRecord = 0;
@@ -94,8 +94,9 @@ namespace CustomerService.Controllers
             var columns = new ColumnSet("title", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
             var entityCollection = _dataverseService.RetrieveEtities("incident", columns);
             var getUserId = Convert.ToString(CurrentUser());
-            var entities = entityCollection.Entities;
-            var data = entities.Select(e => new
+
+            var result = _dataverseService.QualiableData("incident", skip, pageSize, columns, sortColumn, sortColumnDirection, searchValue);
+            var data = result.Entities.Select(e => new
             {
                 CaseId = e.Id,
                 Title = e.GetAttributeValue<string>("title"),
@@ -108,14 +109,11 @@ namespace CustomerService.Controllers
             }).AsQueryable();
 
             //get total count of data in table
-            totalRecord = data.Count();
+            totalRecord = result.TotalRecordCount;
             // search data when search value found
-            if (!string.IsNullOrEmpty(searchValue))
-            {
-                data = data.Where(x => x.Title.ToLower().Contains(searchValue.ToLower()) || x.CaseNumber.ToLower().Contains(searchValue.ToLower()));
-            }
+            
             // get total count of records after search
-            filterRecord = data.Count();
+            filterRecord = result.Entities.Count;
             //sort data
             if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection)) data = data.OrderBy(sortColumn + " " + sortColumnDirection);
             //pagination
