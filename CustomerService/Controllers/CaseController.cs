@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Options;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using System.Security.Claims;
+using System.Linq.Dynamic.Core;
 
 namespace CustomerService.Controllers
 {
@@ -23,28 +25,110 @@ namespace CustomerService.Controllers
             return View();
         }
 
-        public IActionResult GetAllCases()
-         {
-            var columns = new ColumnSet("title", "description", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
+        //public JsonResult GetAllCases()
+        //{
+        //    // Retrieve parameters from the request
+        //    var draw = Request.Form["draw"].FirstOrDefault();
+        //    var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+        //    var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+        //    var searchValue = Request.Form["search[value]"].FirstOrDefault();
+        //    int pageSize = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+        //    int skip = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
 
-            var cases = _dataverseService.RetrieveEtities("incident", columns);
-            var currentUser = _dataverseService.GetCurrentUserId();
+        //    // Define columns to retrieve
+        //    var columns = new ColumnSet("title", "description", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
 
-            var caseList = cases.Entities.Select(e => new CaseModel
+        //    // Retrieve cases with filtering, sorting, and pagination
+        //    var cases = _dataverseService.RetrieveEntities(
+        //        "incident",
+        //        columns,
+        //        filter: searchValue,
+        //        sortColumn: sortColumn,
+        //        sortDescending: sortColumnDirection == "desc",
+        //        pageNumber: (skip / pageSize) + 1,
+        //        pageSize: pageSize
+        //    );
+
+        //    // Map entities to CaseModel
+        //    var caseList = cases.Entities.Select(e => new CaseModel
+        //    {
+        //        CaseId = e.Id,
+        //        Title = e.GetAttributeValue<string>("title"),
+        //        Description = e.GetAttributeValue<string>("description"),
+        //        CaseNumber = e.GetAttributeValue<string>("ticketnumber"),
+        //        Priority = e.FormattedValues.ContainsKey("prioritycode") ? e.FormattedValues["prioritycode"] : string.Empty,
+        //        Status = e.FormattedValues.ContainsKey("statuscode") ? e.FormattedValues["statuscode"] : string.Empty,
+        //        Owner = e.GetAttributeValue<EntityReference>("ownerid")?.Id.ToString(),
+        //        CreatedOn = e.GetAttributeValue<DateTime>("createdon")
+        //    }).ToList();
+
+        //    // Total records and filtered records
+        //    int totalRecord = _dataverseService.RetrieveEntities("incident", columns).Entities.Count();
+        //    int filterRecord = caseList.Count();
+
+        //    // Prepare JSON response
+        //    var returnObj = new
+        //    {
+        //        draw = draw,
+        //        recordsTotal = totalRecord,
+        //        recordsFiltered = filterRecord,
+        //        data = caseList
+        //    };
+
+        //    return Json(returnObj);
+        //}
+        
+        [HttpPost]
+        public JsonResult GetAllCases()
+        {
+
+            int totalRecord = 0;
+            int filterRecord = 0;
+            var draw = Request.Form["draw"].FirstOrDefault();
+            var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
+            var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+            var searchValue = Request.Form["search[value]"].FirstOrDefault();
+            int pageSize = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "0");
+            int skip = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+
+            var columns = new ColumnSet("title", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
+            var entityCollection = _dataverseService.RetrieveEtities("incident", columns);
+            var getUserId = Convert.ToString(CurrentUser());
+            var entities = entityCollection.Entities;
+            var data = entities.Select(e => new
             {
                 CaseId = e.Id,
                 Title = e.GetAttributeValue<string>("title"),
-                Description = e.GetAttributeValue<string>("description"),
                 CaseNumber = e.GetAttributeValue<string>("ticketnumber"),
                 Priority = e.FormattedValues.ContainsKey("prioritycode") ? e.FormattedValues["prioritycode"] : string.Empty,
                 Status = e.FormattedValues.ContainsKey("statuscode") ? e.FormattedValues["statuscode"] : string.Empty,
-                Owner = e.GetAttributeValue<EntityReference>("ownerid")?.Id.ToString(),
+                OwnerId = e.GetAttributeValue<EntityReference>("ownerid")?.Id.ToString(),
                 CreatedOn = e.GetAttributeValue<DateTime>("createdon"),
-                UserId = currentUser
+                UserId = Convert.ToString(getUserId)
+            }).AsQueryable();
 
-            }).ToList();
+            //get total count of data in table
+            totalRecord = data.Count();
+            // search data when search value found
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                data = data.Where(x => x.Title.ToLower().Contains(searchValue.ToLower()) || x.CaseNumber.ToLower().Contains(searchValue.ToLower()));
+            }
+            // get total count of records after search
+            filterRecord = data.Count();
+            //sort data
+            if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection)) data = data.OrderBy(sortColumn + " " + sortColumnDirection);
+            //pagination
+            var caseList = data.Skip(skip).Take(pageSize).ToList();
+            var returnObj = new
+            {
+                draw = draw,
+                recordsTotal = totalRecord,
+                recordsFiltered = filterRecord,
+                data = caseList
+            };
 
-            return new JsonResult(caseList);
+            return Json(returnObj);
         }
 
 
@@ -67,23 +151,29 @@ namespace CustomerService.Controllers
             ModelState.Remove(nameof(CaseModel.CreatedOn));
             ModelState.Remove(nameof(CaseModel.Status));
             ModelState.Remove(nameof(CaseModel.CaseNumber));
+            ClaimsIdentity? cIdentity = User.Identity as ClaimsIdentity;
 
             if (ModelState.IsValid)
             {
-                Entity newCase = new Entity("incident");
-                newCase["title"] = model.Title;
-                newCase["description"] = model.Description;
-                newCase["prioritycode"] = new OptionSetValue(int.Parse(model.Priority));
-                if (!string.IsNullOrEmpty(model.Customer))
-                {
-                    newCase["customerid"] = new EntityReference("account", Guid.Parse(model.Customer));
-                }
+              
 
-                var caseId = _dataverseService.CreateEntity(newCase);
-                TempData["success"] = "Case created successfully!";
+                    Entity newCase = new Entity("incident");
+                    newCase["title"] = model.Title;
+                    newCase["description"] = model.Description;
+                    newCase["prioritycode"] = new OptionSetValue(int.Parse(model.Priority));
+                    newCase["ownerid"] = new EntityReference("systemuser", CurrentUser());
+                    if (!string.IsNullOrEmpty(model.Customer))
+                    {
+                        newCase["customerid"] = new EntityReference("account", Guid.Parse(model.Customer));
+                    }
+
+                    var caseId = _dataverseService.CreateEntity(newCase);
+                    TempData["success"] = "Case created successfully!";
 
 
-                return RedirectToAction("Index");
+                    return RedirectToAction("Index");
+                
+               
             }
 
             var accounts = _dataverseService.RetrieveEtities("account", new ColumnSet("name", "accountid"));
@@ -95,6 +185,27 @@ namespace CustomerService.Controllers
 
 
             return View(model);
+        }
+
+        public Guid CurrentUser()
+        {
+            try
+            {
+                ClaimsIdentity? cIdentity = User.Identity as ClaimsIdentity;
+
+                
+                
+                var azureId = cIdentity.Claims.FirstOrDefault(x => x.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+                return _dataverseService.GetCurrentUserGuid(azureId);
+                
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
+            
         }
 
         public IActionResult Edit(Guid id)

@@ -27,62 +27,54 @@ namespace CustomerService
             return _serviceClient.RetrieveMultiple(query);
         }
 
-        public EntityCollection RetrieveEntities(string entityName, ColumnSet columns, string filter = null, string sortColumn = null, bool sortDescending = false, int pageNumber = 1,int pageSize = 50)
-        {
+      //  public EntityCollection RetrieveEntities(string entityName, ColumnSet columns, string filter = null, string sortColumn = null, bool sortDescending = false, int pageNumber = 1,int pageSize = 10)
+      //{
+      //      try
+      //      {
+      //          var query = new QueryExpression(entityName)
+      //          {
+      //              ColumnSet = columns,
+      //              PageInfo = new PagingInfo
+      //              {
+      //                  PageNumber = pageNumber,
+      //                  Count = pageSize
+      //              }
+      //          };
 
-            var query = new QueryExpression(entityName)
-            {
-                ColumnSet = columns,
-                PageInfo = new PagingInfo
-                {
-                    PageNumber = pageNumber,
-                    Count = pageSize
-                }
-            };
+      //          if (!string.IsNullOrEmpty(sortColumn))
+      //          {
+      //              query.Orders.Add(new OrderExpression(sortColumn, sortDescending ? OrderType.Descending : OrderType.Ascending));
+      //          }
 
-            if (!string.IsNullOrEmpty(sortColumn))
-            {
-                query.Orders.Add(new OrderExpression(sortColumn, sortDescending ? OrderType.Descending : OrderType.Ascending));
-            }
+                
+      //          if (!string.IsNullOrEmpty(filter))
+      //          {
+      //              var filterExpression = new FilterExpression(LogicalOperator.Or);
 
-            // Apply filtering if specified
-            if (!string.IsNullOrEmpty(filter))
-            {
-                var filterExpression = new FilterExpression(LogicalOperator.Or);
+      //              // Use filter to match string fields
+      //              filterExpression.AddCondition(new ConditionExpression("title", ConditionOperator.Contains, filter));
+      //              filterExpression.AddCondition(new ConditionExpression("ticketnumber", ConditionOperator.Contains, filter));
 
-                // Use filter to match string fields
-                filterExpression.AddCondition(new ConditionExpression("title", ConditionOperator.Like, $"%{filter}%"));
-                filterExpression.AddCondition(new ConditionExpression("description", ConditionOperator.Like, $"%{filter}%"));
-                filterExpression.AddCondition(new ConditionExpression("ticketnumber", ConditionOperator.Like, $"%{filter}%"));
-
-                // Add conditions for OptionSetValue fields
-                if (int.TryParse(filter, out int filterValue))
-                {
-                    filterExpression.AddCondition(new ConditionExpression("prioritycode", ConditionOperator.Equal, filterValue));
-                    filterExpression.AddCondition(new ConditionExpression("statuscode", ConditionOperator.Equal, filterValue));
-                }
-                else
-                {
-                    // Add conditions for OptionSetValue fields if filter is not numeric
-                    filterExpression.AddCondition(new ConditionExpression("prioritycode", ConditionOperator.Like, $"%{filter}%"));
-                    filterExpression.AddCondition(new ConditionExpression("statuscode", ConditionOperator.Like, $"%{filter}%"));
-                }
-
-                query.Criteria = filterExpression;
-            }
-
-            // Execute the query and retrieve results
-            var result = _serviceClient.RetrieveMultiple(query);
-            return result;
-        }
+      //              // Add conditions for OptionSetValue fields
 
 
-        public Guid GetCurrentUserId()
-        {
-            var request = new WhoAmIRequest();
-            var response = (WhoAmIResponse)_serviceClient.Execute(request);
-            return response.UserId;
-        }
+      //              query.Criteria = filterExpression;
+      //          }
+
+      //          // Execute the query and retrieve results
+      //          var result = _serviceClient.RetrieveMultiple(query);
+
+
+      //          return result;
+      //      }
+      //      catch (Exception)
+      //      {
+
+      //          throw;
+      //      }
+            
+      //  }
+
 
         public Guid CreateEntity (Entity entity)
         {
@@ -186,6 +178,44 @@ namespace CustomerService
             }catch(Exception ex)
             {
                 throw new ApplicationException($"An error occurred while resolving the Case entity with ID {caseId}.", ex);
+            }
+        }
+
+        public Guid GetCurrentUserGuid(string id)
+        {
+            try
+            {
+                QueryExpression query = new()
+                {
+                    Distinct = false,
+                    EntityName = "systemuser",
+                    ColumnSet = new ColumnSet("firstname", "systemuserid"),
+                    Criteria =
+                {
+                    Filters =
+                    {
+                        new FilterExpression
+                        {
+                           FilterOperator = LogicalOperator.Or,
+                           Conditions =
+                            {
+                                new ConditionExpression(
+                                    attributeName: "azureactivedirectoryobjectid",
+                                    conditionOperator: ConditionOperator.Equal,
+                                    values: id
+                                    )
+                            }
+                        }
+                    }
+                }
+
+                };
+                return _serviceClient.RetrieveMultiple(query).Entities.FirstOrDefault().GetAttributeValue<Guid>("systemuserid");
+            }
+            catch (Exception)
+            {
+
+                throw;
             }
         }
 

@@ -2,7 +2,7 @@
     $('#dataTable').DataTable(
         {
             ajax: {
-                url: "/Case/GetCases",
+                url: "/Case/GetAllCases",
                 type: "POST",
             },
             processing: true,
@@ -22,7 +22,7 @@
                 {
                     data: "caseId",
                     render: function (data, type, row, meta) {
-                        var isOwner = row.owner === row.userId;
+                        var isOwner = row.ownerId === row.userId;
                         var validStatus = row.status != 'Problem Solved' && row.status != 'Cancelled';
                         var result = isOwner && validStatus;
 
