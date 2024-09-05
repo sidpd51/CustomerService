@@ -6,6 +6,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System.Security.Claims;
 using System.Linq.Dynamic.Core;
+using CustomerService.Service;
 
 namespace CustomerService.Controllers
 {

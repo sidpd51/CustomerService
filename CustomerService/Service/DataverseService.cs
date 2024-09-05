@@ -6,7 +6,7 @@ using Microsoft.Xrm.Sdk.Query;
 using System;
 
 
-namespace CustomerService
+namespace CustomerService.Service
 {
     public class DataverseService
     {
@@ -240,5 +240,15 @@ namespace CustomerService
             }
         }
 
+        public EntityCollection RetrieveContacts(ColumnSet columns)
+        {
+            QueryExpression query = new QueryExpression("contact")
+            {
+                ColumnSet = columns
+            };
+            return _serviceClient.RetrieveMultiple(query);
+        }
+
+        
     }
 }

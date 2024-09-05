@@ -1,0 +1,57 @@
+﻿﻿
+@using CustomerService
+@model List<ContactModel>
+
+<div class="container">
+    <partial name="_Notificationx" />
+    <div class="row pt-4 pb-3">
+        <div class="col-6">
+            <h2 class="text-primary">Contact List</h2>
+        </div>
+        <div class="col-6 text-end">
+            <a asp-controller="Contact" asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Create New Contact</a>
+        </div>
+    </div>
+    <table class="table table-bordered table-striped" id="contact-datatable">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Account</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Interests</th>
+                <th>Created On</th>
+                <th>Operations</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contactModel in Model.OrderByDescending(e=>e.CreatedOn))
+            {
+                <tr>
+                    <td>@contactModel.FirstName</td>
+                    <td>@contactModel.LastName</td>
+                    <td>@contactModel.Account</td>
+                    <td>@contactModel.Email</td>
+                    <td>@contactModel.Phone</td>
+                    <td>@contactModel.ShowInterest</td>
+                    <td>@contactModel.CreatedOn.ToString("dd-MM-yyyy")</td>
+                    <td>
+                        <div class="w-75 btn-group" role="group">
+                            <a asp-controller="Contact" asp-action="Edit" asp-route-id="@contactModel.Id" class="btn btn-primary mx-2 ">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-controller="Contact" asp-action="Delete" asp-route-id="@contactModel.Id" class="btn btn-danger mx-2 ">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section scripts {
+    <script src="~/js/datatable_contact.js"></script>
+}

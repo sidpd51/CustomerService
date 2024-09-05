@@ -1,0 +1,80 @@
+﻿@model ContactModel
+
+<form method="post">
+    <div class="border p-3 mt-4">
+        <div class="row pb-2">
+            <h2 class="text-primary">Edit Contact</h2>
+            <input asp-for="Id" class="form-control mb-2 d-none" />
+            <hr />
+            <div class="mb-3 row ps-4">
+                <div class="col-6 p-0">
+                    <label asp-for="FirstName" class="p-0 mb-1"></label>
+                    <input asp-for="FirstName" class="form-control mb-2" />
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                </div>
+                <div class="col-6 p-0">
+                    <div class="ps-4">
+                        <label asp-for="LastName" class="p-0 mb-1"></label>
+                        <input asp-for="LastName" class="form-control mb-2" />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3 row ps-4">
+                <div class="col-6 p-0">
+                    <label asp-for="Phone" class="p-0 mb-1"></label>
+                    <input asp-for="Phone" class="form-control mb-2" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+                <div class="col-6 p-0">
+                    <div class="ps-4">
+                        <label asp-for="Account" class="p-0 mb-1"></label>
+                        <select asp-for="Account" class="form-control mb-2" asp-items="ViewBag.Accounts">
+                            <option value="">Select a Customer</option>
+                        </select>
+                        <span asp-validation-for="Account" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3 row ps-4">
+                <div class="col-6 p-0">
+                    <label asp-for="Email" class="p-0 mb-1"></label>
+                    <input asp-for="Email" class="form-control mb-2" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-6 p-0">
+                    <div class="ps-4">
+                        <label asp-for="Interest" class="p-0 mb-1"></label>
+                        <select asp-for="Interest" id="interest" class="form-select mb-2" multiple>
+                            <option value="" >Select a Interest</option>
+                            <option value="0">Bike Riding</option>
+                            <option value="1">Book Reading</option>
+                            <option value="2">Designing</option>
+                            <option value="3">Problem solving</option>
+                        </select>
+                        <span asp-validation-for="Interest" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3 row ps-4">
+            </div>
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <button type="submit" class="btn btn-primary form-control">Edit</button>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a asp-controller="Contact" asp-action="Index" class="btn btn-secondary border form-control">Back to list</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+
+
+        <partial name="_ValidationScriptsPartial"></partial>
+
+    }
+}
