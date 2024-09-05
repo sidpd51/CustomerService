@@ -42,7 +42,7 @@
                             <a href="/Case/Cancel/${row.caseId}" class="btn btn-warning rounded-2 mx-2 ${!result ? 'disabled' : ''}" >
                                 <i class="bi bi-arrow-down-circle-fill"></i>
                             </a>
-                             <a href="/Case/Reopen/${row.caseId}" class="btn btn-info rounded-2 mx-2 ${!result&&isOwner ? '' : 'disabled'}" >
+                             <a href="/Case/Reactivate/${row.caseId}" class="btn btn-info rounded-2 mx-2 ${!result&&isOwner ? '' : 'disabled'}" >
                                 <i class="bi bi-door-open-fill"></i>
                             </a>
                         </div>

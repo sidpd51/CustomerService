@@ -301,24 +301,24 @@ namespace CustomerService.Controllers
             }
         }
 
-        //public IActionResult Reopen(Guid id)
-        //{
-        //    if (id == null)
-        //    {
-        //        return NotFound();
-        //    }
+        public IActionResult Reactivate(Guid id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
 
-        //    try
-        //    {
-        //        _dataverseService.ReopenCase();
-        //        TempData["success"] = "Case Reopened successfully!";
-        //        return RedirectToAction("Index");
-        //    }
-        //    catch (Exception)
-        //    {
+            try
+            {
+                _dataverseService.SetCaseStatus(id, 1);
+                TempData["success"] = "Case Reactivated successfully!";
+                return RedirectToAction("Index");
+            }
+            catch (Exception)
+            {
 
-        //        return NotFound();
-        //    }
-        //}
+                return NotFound();
+            }
+        }
     }
 }

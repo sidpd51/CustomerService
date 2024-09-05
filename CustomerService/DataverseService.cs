@@ -157,24 +157,46 @@ namespace CustomerService
                     _serviceClient.Execute(request);
                     return;
                 }
-
-                Entity incident = new Entity("incident")
+                else if (status == 6)
                 {
-                    Id = caseId,
-                };
+                   
+                    Entity incident = new Entity("incident")
+                    {
+                        Id = caseId,
+                    };
 
-                incident["statecode"] = new OptionSetValue(2);
-                incident["statuscode"] = new OptionSetValue(status);
+                    incident["statecode"] = new OptionSetValue(2);
+                    incident["statuscode"] = new OptionSetValue(status);
 
-                UpdateRequest updateRequest = new()
+                    UpdateRequest updateRequest = new()
+                    {
+                        Target = incident
+                    };
+
+                    _serviceClient.Execute(updateRequest);
+                    return;
+                    
+                }else
                 {
-                    Target = incident
-                };
+                    Entity incident = new Entity("incident")
+                    {
+                        Id = caseId,
+                    };
 
-                _serviceClient.Execute(updateRequest);
-                
+                    incident["statecode"] = new OptionSetValue(0);
+                    incident["statuscode"] = new OptionSetValue(status);
 
-            }catch(Exception ex)
+                    UpdateRequest updateRequest = new()
+                    {
+                        Target = incident
+                    };
+
+                    _serviceClient.Execute(updateRequest);
+                    return;
+                }
+
+            }
+            catch(Exception ex)
             {
                 throw new ApplicationException($"An error occurred while resolving the Case entity with ID {caseId}.", ex);
             }
