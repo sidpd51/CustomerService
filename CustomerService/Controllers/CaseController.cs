@@ -25,58 +25,7 @@ namespace CustomerService.Controllers
             return View();
         }
 
-        //public JsonResult GetAllCases()
-        //{
-        //    // Retrieve parameters from the request
-        //    var draw = Request.Form["draw"].FirstOrDefault();
-        //    var sortColumn = Request.Form["columns[" + Request.Form["order[0][column]"].FirstOrDefault() + "][name]"].FirstOrDefault();
-        //    var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-        //    var searchValue = Request.Form["search[value]"].FirstOrDefault();
-        //    int pageSize = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-        //    int skip = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-
-        //    // Define columns to retrieve
-        //    var columns = new ColumnSet("title", "description", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
-
-        //    // Retrieve cases with filtering, sorting, and pagination
-        //    var cases = _dataverseService.RetrieveEntities(
-        //        "incident",
-        //        columns,
-        //        filter: searchValue,
-        //        sortColumn: sortColumn,
-        //        sortDescending: sortColumnDirection == "desc",
-        //        pageNumber: (skip / pageSize) + 1,
-        //        pageSize: pageSize
-        //    );
-
-        //    // Map entities to CaseModel
-        //    var caseList = cases.Entities.Select(e => new CaseModel
-        //    {
-        //        CaseId = e.Id,
-        //        Title = e.GetAttributeValue<string>("title"),
-        //        Description = e.GetAttributeValue<string>("description"),
-        //        CaseNumber = e.GetAttributeValue<string>("ticketnumber"),
-        //        Priority = e.FormattedValues.ContainsKey("prioritycode") ? e.FormattedValues["prioritycode"] : string.Empty,
-        //        Status = e.FormattedValues.ContainsKey("statuscode") ? e.FormattedValues["statuscode"] : string.Empty,
-        //        Owner = e.GetAttributeValue<EntityReference>("ownerid")?.Id.ToString(),
-        //        CreatedOn = e.GetAttributeValue<DateTime>("createdon")
-        //    }).ToList();
-
-        //    // Total records and filtered records
-        //    int totalRecord = _dataverseService.RetrieveEntities("incident", columns).Entities.Count();
-        //    int filterRecord = caseList.Count();
-
-        //    // Prepare JSON response
-        //    var returnObj = new
-        //    {
-        //        draw = draw,
-        //        recordsTotal = totalRecord,
-        //        recordsFiltered = filterRecord,
-        //        data = caseList
-        //    };
-
-        //    return Json(returnObj);
-        //}
+        
         
         [HttpPost]
         public JsonResult GetAllCases()
@@ -92,7 +41,7 @@ namespace CustomerService.Controllers
             int skip = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
 
             var columns = new ColumnSet("title", "ticketnumber", "prioritycode", "statuscode", "ownerid", "createdon");
-            var entityCollection = _dataverseService.RetrieveEtities("incident", columns);
+          
             var getUserId = Convert.ToString(CurrentUser());
 
             var result = _dataverseService.QualiableData("incident", skip, pageSize, columns, searchValue, sortColumn, sortColumnDirection);
@@ -351,5 +300,25 @@ namespace CustomerService.Controllers
                 return NotFound();
             }
         }
+
+        //public IActionResult Reopen(Guid id)
+        //{
+        //    if (id == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    try
+        //    {
+        //        _dataverseService.ReopenCase();
+        //        TempData["success"] = "Case Reopened successfully!";
+        //        return RedirectToAction("Index");
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        return NotFound();
+        //    }
+        //}
     }
 }
