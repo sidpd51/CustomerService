@@ -80,7 +80,7 @@ namespace CustomerService.Controllers
         
         [HttpPost]
         public JsonResult GetAllCases()
-{
+        {
 
             int totalRecord = 0;
             int filterRecord = 0;
@@ -95,7 +95,7 @@ namespace CustomerService.Controllers
             var entityCollection = _dataverseService.RetrieveEtities("incident", columns);
             var getUserId = Convert.ToString(CurrentUser());
 
-            var result = _dataverseService.QualiableData("incident", skip, pageSize, columns, sortColumn, sortColumnDirection, searchValue);
+            var result = _dataverseService.QualiableData("incident", skip, pageSize, columns, searchValue, sortColumn, sortColumnDirection);
             var data = result.Entities.Select(e => new
             {
                 CaseId = e.Id,
@@ -106,18 +106,16 @@ namespace CustomerService.Controllers
                 OwnerId = e.GetAttributeValue<EntityReference>("ownerid")?.Id.ToString(),
                 CreatedOn = e.GetAttributeValue<DateTime>("createdon"),
                 UserId = Convert.ToString(getUserId)
-            }).AsQueryable();
+            });
 
             //get total count of data in table
             totalRecord = result.TotalRecordCount;
             // search data when search value found
             
             // get total count of records after search
-            filterRecord = result.Entities.Count;
-            //sort data
-            if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection)) data = data.OrderBy(sortColumn + " " + sortColumnDirection);
-            //pagination
-            var caseList = data.Skip(skip).Take(pageSize).ToList();
+            filterRecord = result.TotalRecordCount;
+            
+            var caseList = data.ToList();
             var returnObj = new
             {
                 draw = draw,

@@ -10,9 +10,9 @@
             filter: true,
             columns: [
                 { data: "title", name: "Title" },
-                { data: "caseNumber", name: "CaseNumber" },
-                { data: "priority", name: "Priority" },
-                { data: "status", name: "Status" },
+                { data: "caseNumber", name: "TicketNumber" },
+                { data: "priority", name: "PriorityCode" },
+                { data: "status", name: "StatusCode" },
                 {
                     data: "createdOn",
                     name: "CreatedOn",

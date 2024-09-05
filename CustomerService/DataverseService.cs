@@ -27,58 +27,10 @@ namespace CustomerService
             return _serviceClient.RetrieveMultiple(query);
         }
 
-      //  public EntityCollection RetrieveEntities(string entityName, ColumnSet columns, string filter = null, string sortColumn = null, bool sortDescending = false, int pageNumber = 1,int pageSize = 10)
-      //{
-      //      try
-      //      {
-      //          var query = new QueryExpression(entityName)
-      //          {
-      //              ColumnSet = columns,
-      //              PageInfo = new PagingInfo
-      //              {
-      //                  PageNumber = pageNumber,
-      //                  Count = pageSize
-      //              }
-      //          };
-
-      //          if (!string.IsNullOrEmpty(sortColumn))
-      //          {
-      //              query.Orders.Add(new OrderExpression(sortColumn, sortDescending ? OrderType.Descending : OrderType.Ascending));
-      //          }
-
-                
-      //          if (!string.IsNullOrEmpty(filter))
-      //          {
-      //              var filterExpression = new FilterExpression(LogicalOperator.Or);
-
-      //              // Use filter to match string fields
-      //              filterExpression.AddCondition(new ConditionExpression("title", ConditionOperator.Contains, filter));
-      //              filterExpression.AddCondition(new ConditionExpression("ticketnumber", ConditionOperator.Contains, filter));
-
-      //              // Add conditions for OptionSetValue fields
-
-
-      //              query.Criteria = filterExpression;
-      //          }
-
-      //          // Execute the query and retrieve results
-      //          var result = _serviceClient.RetrieveMultiple(query);
-
-
-      //          return result;
-      //      }
-      //      catch (Exception)
-      //      {
-
-      //          throw;
-      //      }
-            
-      //  }
-        
-        public EntityCollection QualiableData(string entityName,int skip, int pageSize, ColumnSet columns,string sortColumn, string sortDescending, string filter)
+ 
+        public EntityCollection QualiableData(string entityName,int skip, int pageSize, ColumnSet columns, string filter, string sortColumn="createdon", string sortDescending = "desc")
         {
             var orderBy = (sortDescending == "asc" ? OrderType.Ascending : OrderType.Descending);
-            string orderCol = sortColumn.ToLower();
             var query = new QueryExpression(entityName) {
                 ColumnSet = columns,
                 Distinct = false,
@@ -112,7 +64,12 @@ namespace CustomerService
                     ReturnTotalRecordCount =true
                 }
             };
-            query.AddOrder(attributeName: orderCol, orderType: orderBy);
+            if (sortColumn != null)
+            {
+                string orderCol = sortColumn.ToLower();
+                query.AddOrder(attributeName: orderCol, orderType: orderBy);
+
+            }
             
 
             return _serviceClient.RetrieveMultiple(query);
