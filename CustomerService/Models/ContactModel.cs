@@ -23,5 +23,9 @@ namespace CustomerService.Models
         
         public int []? Interest { get; set; }
 
+        public byte[]? EntityImage { get; set; }
+
+        public byte[]? AnyDoc { get; set; }
+
     }
 }

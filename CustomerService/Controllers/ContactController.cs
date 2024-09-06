@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Sdk;
 using CustomerService.Service;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Crm.Sdk.Messages;
 
 namespace CustomerService.Controllers
 {
@@ -19,9 +20,9 @@ namespace CustomerService.Controllers
 
         public IActionResult Index()
         {
-           
 
-            var columns = new ColumnSet("firstname","createdon", "lastname", "parentcustomerid", "mobilephone", "emailaddress1", "sid_interest");
+            var contact = _dataverseService.RetrieveEntity("contact", Guid.Parse("8bf926f7-156c-ef11-a670-002248d66802"), new ColumnSet("sid_uploaddoc"));
+            var columns = new ColumnSet("firstname","createdon", "lastname", "parentcustomerid", "mobilephone", "emailaddress1", "sid_interest", "entityimage");
             EntityCollection entityCollection = _dataverseService.RetrieveContacts(columns);
             var contactList = entityCollection.Entities.Select(e => new ContactModel
             {
@@ -32,7 +33,8 @@ namespace CustomerService.Controllers
                 ShowInterest = e.FormattedValues.ContainsKey("sid_interest")? e.FormattedValues["sid_interest"]: string.Empty,
                 Email = e.GetAttributeValue<string>("emailaddress1"),
                 Phone = e.GetAttributeValue<string>("mobilephone"),
-                CreatedOn = e.GetAttributeValue<DateTime>("createdon")
+                CreatedOn = e.GetAttributeValue<DateTime>("createdon"),
+                EntityImage = e.GetAttributeValue<byte[]>("entityimage")
             }).ToList();
             
             return View(contactList);
@@ -51,7 +53,7 @@ namespace CustomerService.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(ContactModel model)
+        public IActionResult Create(ContactModel model, IFormFile anyDoc)
         {
             try
             {
@@ -65,18 +67,33 @@ namespace CustomerService.Controllers
                     newContact["lastname"] = model.LastName;
                     newContact["mobilephone"] = model.Phone;
                     newContact["emailaddress1"] = model.Email;
+                    
                     if (!string.IsNullOrEmpty(model.Account))
                     {
                         newContact["parentcustomerid"] = new EntityReference("account", Guid.Parse(model.Account));
                     }
+                    
                     newContact["sid_interest"] = model.Interest.Length == 0 ? null : new OptionSetValueCollection(Array.ConvertAll(model.Interest, value => new OptionSetValue(value)));
-
+                    
+                    if (anyDoc != null && anyDoc.Length > 0)
+                    {
+                        using (var ms = new MemoryStream())
+                        {
+                            anyDoc.CopyTo(ms);
+                            model.AnyDoc = ms.ToArray();
+                            if (anyDoc.ContentType == "image/jpeg")
+                            {
+                                newContact["entityimage"] = model.AnyDoc;
+                            }
+                        }
+                        
+                    }
 
                     var contactGuid = _dataverseService.CreateEntity(newContact);
                     TempData["success"] = "Contact created successfully!";
                     return RedirectToAction("Index");
                 }
-
+               
                 var accounts = _dataverseService.RetrieveEtities("account", new ColumnSet("name", "accountid"));
 
                 ViewBag.Accounts = new SelectList(accounts.Entities.Select(a => new {
@@ -104,7 +121,7 @@ namespace CustomerService.Controllers
 
             }
 
-            var contactEntity = _dataverseService.RetrieveEntity("contact", id, new ColumnSet("firstname", "createdon", "lastname", "parentcustomerid", "mobilephone", "emailaddress1", "sid_interest"));
+            var contactEntity = _dataverseService.RetrieveEntity("contact", id, new ColumnSet("firstname", "createdon", "entityimage", "lastname", "parentcustomerid", "mobilephone", "emailaddress1", "sid_interest"));
             if (contactEntity == null)
             {
                 return NotFound();
@@ -123,6 +140,8 @@ namespace CustomerService.Controllers
                 Account = contactEntity.GetAttributeValue<EntityReference>("parentcustomerid").Id.ToString(),
                 Email = contactEntity.GetAttributeValue<string>("emailaddress1"),
                 Phone = contactEntity.GetAttributeValue<string>("mobilephone"),
+                EntityImage = contactEntity.GetAttributeValue<byte[]>("entityimage"),
+                AnyDoc = contactEntity.GetAttributeValue<byte[]>("sid_uploaddoc"),
                 Interest = interestArray
              };
     
@@ -138,7 +157,7 @@ namespace CustomerService.Controllers
             return View(model);
         }
         [HttpPost]
-        public IActionResult Edit(ContactModel model)
+        public IActionResult Edit(ContactModel model, IFormFile anyDoc)
         {
             try
             {
@@ -158,7 +177,23 @@ namespace CustomerService.Controllers
                         newContact["parentcustomerid"] = new EntityReference("account", Guid.Parse(model.Account));
                     }
                     newContact["sid_interest"] = model.Interest.Length == 0 ? null : new OptionSetValueCollection(Array.ConvertAll(model.Interest, value => new OptionSetValue(value)));
+                    if (anyDoc != null && anyDoc.Length > 0)
+                    {
+                        using (var ms = new MemoryStream())
+                        {
+                            anyDoc.CopyTo(ms);
+                            model.AnyDoc = ms.ToArray();
+                            if (anyDoc.ContentType == "image/jpeg")
+                            {
+                                newContact["entityimage"] = model.AnyDoc;
+                            }
+                            else
+                            {
+                                newContact["sid_uploaddoc"] = model.AnyDoc;
+                            }
+                        }
 
+                    }
 
                     _dataverseService.UpdateEntity(newContact);
                     TempData["success"] = "Contact updated successfully!";

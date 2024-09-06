@@ -1,6 +1,6 @@
 ﻿@model ContactModel
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <div class="border p-3 mt-4">
         <div class="row pb-2">
             <h2 class="text-primary">Create Contact</h2>
@@ -56,8 +56,13 @@
                 </div>
             </div>
             <div class="mb-3 row ps-4">
-                
+                <div class="col-6 p-0">
+                    <label asp-for="AnyDoc" class="p-0 mb-1">Upload Document/Image</label>
+                    <input type="file" asp-for="AnyDoc" class="form-control mb-2" />
+                    <span asp-validation-for="AnyDoc" class="text-danger"></span>
+                </div>
             </div>
+
             <div class="row">
                 <div class="col-6 col-md-3">
                     <button type="submit" class="btn btn-primary form-control">Create</button>
