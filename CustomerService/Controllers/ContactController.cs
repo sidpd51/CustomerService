@@ -5,6 +5,8 @@ using Microsoft.Xrm.Sdk;
 using CustomerService.Service;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Crm.Sdk.Messages;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace CustomerService.Controllers
 {
@@ -81,15 +83,56 @@ namespace CustomerService.Controllers
                         {
                             anyDoc.CopyTo(ms);
                             model.AnyDoc = ms.ToArray();
-                            if (anyDoc.ContentType == "image/jpeg")
+                            if (anyDoc.ContentType == "image/jpeg"|| anyDoc.ContentType == "image/png"|| anyDoc.ContentType == "image/jpg")
                             {
                                 newContact["entityimage"] = model.AnyDoc;
+                                var contactGuid = _dataverseService.CreateEntity(newContact);
+                            }
+                            else
+                            {
+                                var contactGuid = _dataverseService.CreateEntity(newContact);
+                                string fileName = anyDoc.FileName;
+                                var blockSize = 4194304; // Block size for uploading 4194304 ~ 4MB
+                                var blockIds = new List<string>();
+                                EntityReference entityReference = new EntityReference("contact", contactGuid);
+                                var initializeFileUploadRequest = new InitializeFileBlocksUploadRequest
+                                {
+                                    FileAttributeName = "sid_uploaddoc", // Replace with the actual field schema name
+                                    Target = entityReference,
+                                    FileName = fileName
+                                };
+
+                                var fileUploadResponse = _dataverseService.ExecuteFileBlockUpload(initializeFileUploadRequest);
+                                for (int i = 0; i < Math.Ceiling(model.AnyDoc.Length / Convert.ToDecimal(blockSize)); i++)
+                                {
+                                    var blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()));
+                                    blockIds.Add(blockId);
+
+                                    var blockData = model.AnyDoc.Skip(i * blockSize).Take(blockSize).ToArray();
+                                    var blockRequest = new UploadBlockRequest()
+                                    {
+                                        FileContinuationToken = fileUploadResponse.FileContinuationToken,
+                                        BlockId = blockId,
+                                        BlockData = blockData
+                                    };
+
+                                    // Execute block upload request
+                                    var blockResponse = _dataverseService.ExecuteUploadBlock(blockRequest);
+                                }
+                                //var commitRequest = new CommitFileBlocksUploadRequest()
+                                //{
+                                //    BlockList = blockIds.ToArray(),
+                                //    FileContinuationToken = fileUploadResponse.FileContinuationToken,
+                                //    FileName = fileName,
+                                //    MimeType = anyDoc.ContentType
+                                //};
+                                _dataverseService.CommitOperation(blockIds, fileUploadResponse.FileContinuationToken, fileName, anyDoc.ContentType);
                             }
                         }
                         
                     }
 
-                    var contactGuid = _dataverseService.CreateEntity(newContact);
+                    
                     TempData["success"] = "Contact created successfully!";
                     return RedirectToAction("Index");
                 }
@@ -121,7 +164,7 @@ namespace CustomerService.Controllers
 
             }
 
-            var contactEntity = _dataverseService.RetrieveEntity("contact", id, new ColumnSet("firstname", "createdon", "entityimage", "lastname", "parentcustomerid", "mobilephone", "emailaddress1", "sid_interest"));
+            var contactEntity = _dataverseService.RetrieveEntity("contact", id, new ColumnSet("firstname", "createdon", "entityimage", "lastname", "parentcustomerid", "sid_uploaddoc", "sid_uploaddoc_name", "mobilephone", "emailaddress1", "sid_interest"));
             if (contactEntity == null)
             {
                 return NotFound();
@@ -141,7 +184,7 @@ namespace CustomerService.Controllers
                 Email = contactEntity.GetAttributeValue<string>("emailaddress1"),
                 Phone = contactEntity.GetAttributeValue<string>("mobilephone"),
                 EntityImage = contactEntity.GetAttributeValue<byte[]>("entityimage"),
-                AnyDoc = contactEntity.GetAttributeValue<byte[]>("sid_uploaddoc"),
+                AnyDoc = _dataverseService.DownloadFile(_dataverseService,contactEntity,"sid_uploaddoc"),
                 Interest = interestArray
              };
     

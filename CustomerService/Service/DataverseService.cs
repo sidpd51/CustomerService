@@ -249,6 +249,119 @@ namespace CustomerService.Service
             return _serviceClient.RetrieveMultiple(query);
         }
 
+        public InitializeFileBlocksUploadResponse ExecuteFileBlockUpload(InitializeFileBlocksUploadRequest fileblock)
+        {
+            try
+            {
+                // Execute the request and cast the response to the appropriate type
+                return (InitializeFileBlocksUploadResponse)_serviceClient.Execute(fileblock);
+            }
+            catch (Exception)
+            {
+                // Handle or log the exception as needed
+                throw;
+            }
+        }
+
         
+        public UploadBlockResponse ExecuteUploadBlock(UploadBlockRequest blockRequest)
+        {
+            try
+            {
+                return (UploadBlockResponse)_serviceClient.Execute(blockRequest);
+            }
+            catch (Exception ex)
+            {
+              
+                throw;
+            }
+        }
+
+        public void CommitOperation(List<string>? blockIds,
+            string fileContinuationToken,
+            string fileName,
+            string mimeType)
+        {
+            try
+            {
+                 var commitRequest = new CommitFileBlocksUploadRequest()
+                {
+                    BlockList = blockIds.ToArray(),
+                    FileContinuationToken = fileContinuationToken,
+                    FileName = fileName,
+                    MimeType = mimeType
+                };
+
+                // Execute the commit request
+                _serviceClient.Execute(commitRequest);
+            }
+            catch (Exception ex)
+            {
+                // Handle or log the exception as needed
+                // For example, you could log the exception:
+                // Log.Error("An error occurred while committing the operation.", ex);
+
+                // Re-throw the exception if it cannot be handled here
+                throw;
+            }
+        }
+       
+        private static byte[] DownloadFile(
+                    IOrganizationService service,
+                    EntityReference entityReference,
+                    string attributeName)
+        {
+            InitializeFileBlocksDownloadRequest initializeFileBlocksDownloadRequest = new()
+            {
+                Target = entityReference,
+                FileAttributeName = attributeName
+            };
+
+            var initializeFileBlocksDownloadResponse =
+                  (InitializeFileBlocksDownloadResponse)service.Execute(initializeFileBlocksDownloadRequest);
+
+            string fileContinuationToken = initializeFileBlocksDownloadResponse.FileContinuationToken;
+            long fileSizeInBytes = initializeFileBlocksDownloadResponse.FileSizeInBytes;
+
+            List<byte> fileBytes = new((int)fileSizeInBytes);
+
+            long offset = 0;
+            // If chunking is not supported, chunk size will be full size of the file.
+            long blockSizeDownload = !initializeFileBlocksDownloadResponse.IsChunkingSupported ? fileSizeInBytes : 4 * 1024 * 1024;
+
+            // File size may be smaller than defined block size
+            if (fileSizeInBytes < blockSizeDownload)
+            {
+                blockSizeDownload = fileSizeInBytes;
+            }
+
+            while (fileSizeInBytes > 0)
+            {
+                // Prepare the request
+                DownloadBlockRequest downLoadBlockRequest = new()
+                {
+                    BlockLength = blockSizeDownload,
+                    FileContinuationToken = fileContinuationToken,
+                    Offset = offset
+                };
+
+                // Send the request
+                var downloadBlockResponse =
+                         (DownloadBlockResponse)service.Execute(downLoadBlockRequest);
+
+                // Add the block returned to the list
+                fileBytes.AddRange(downloadBlockResponse.Data);
+
+                // Subtract the amount downloaded,
+                // which may make fileSizeInBytes < 0 and indicate
+                // no further blocks to download
+                fileSizeInBytes -= (int)blockSizeDownload;
+                // Increment the offset to start at the beginning of the next block.
+                offset += blockSizeDownload;
+            }
+
+            return fileBytes.ToArray();
+        }
+
     }
 }
