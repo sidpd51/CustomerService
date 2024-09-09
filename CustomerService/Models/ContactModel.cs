@@ -13,6 +13,7 @@ namespace CustomerService.Models
         [Required]
         public string Account { get; set; }
         [Required]
+        [EmailAddress]
         public string Email { get; set; }
         [Required]
         public string Phone { get; set; }
@@ -26,6 +27,8 @@ namespace CustomerService.Models
         public byte[]? EntityImage { get; set; }
 
         public byte[]? AnyDoc { get; set; }
+
+        public string? DocName { get; set; }
 
     }
 }

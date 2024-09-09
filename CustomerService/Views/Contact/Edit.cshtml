@@ -45,8 +45,7 @@
                 <div class="col-6 p-0">
                     <div class="ps-4">
                         <label asp-for="Interest" class="p-0 mb-1"></label>
-                        <select asp-for="Interest" id="interest" class="form-select mb-2" multiple>
-                            <option value="" >Select a Interest</option>
+                        <select asp-for="Interest" id="interest" class="form-control mb-2 selectpicker w-100" multiple>
                             <option value="0">Bike Riding</option>
                             <option value="1">Book Reading</option>
                             <option value="2">Designing</option>
@@ -57,11 +56,19 @@
                 </div>
             </div>
             <div class="mb-3 row ps-4">
-                <div class="col-6 p-0">
-                    <label asp-for="EntityImage" class="p-0 mb-1">Upload Document/Image</label>
-                    <input type="file" asp-for="EntityImage" class="form-control mb-2" />
-                    <span asp-validation-for="EntityImage" class="text-danger"></span>
-                </div>
+                
+                 <div class="col-6 p-0">
+                    @if (Model.DocName != null)
+                    {
+                        <div class="my-2">
+
+                            <a asp-controller="Contact" asp-action="Download" asp-route-id="@Model.Id">@Model.DocName</a>
+                        </div>
+                    }
+                    <label asp-for="AnyDoc" class="p-0 mb-1">Upload Document/Image</label>
+                    <input type="file" asp-for="AnyDoc" class="form-control mb-2" />
+                    <span asp-validation-for="AnyDoc" class="text-danger"></span>
+                 </div>
             </div>
             <div class="row">
                 <div class="col-6 col-md-3">

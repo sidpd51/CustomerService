@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Crm.Sdk.Messages;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.NamedPipes;
 
 namespace CustomerService.Controllers
 {
@@ -116,16 +117,10 @@ namespace CustomerService.Controllers
                                         BlockData = blockData
                                     };
 
-                                    // Execute block upload request
+                                    
                                     var blockResponse = _dataverseService.ExecuteUploadBlock(blockRequest);
                                 }
-                                //var commitRequest = new CommitFileBlocksUploadRequest()
-                                //{
-                                //    BlockList = blockIds.ToArray(),
-                                //    FileContinuationToken = fileUploadResponse.FileContinuationToken,
-                                //    FileName = fileName,
-                                //    MimeType = anyDoc.ContentType
-                                //};
+                               
                                 _dataverseService.CommitOperation(blockIds, fileUploadResponse.FileContinuationToken, fileName, anyDoc.ContentType);
                             }
                         }
@@ -156,7 +151,7 @@ namespace CustomerService.Controllers
 
         public IActionResult Edit(Guid id)
         
-        {
+       {
             if (id == null)
             {
 
@@ -171,10 +166,13 @@ namespace CustomerService.Controllers
             }
             
             var optionSetCollection = contactEntity.GetAttributeValue<OptionSetValueCollection>("sid_interest");
+
             int[] interestArray = optionSetCollection != null
                 ? optionSetCollection.Select(option => option.Value).ToArray()
                 : new int[] { };
 
+            EntityReference er = new EntityReference("contact", id);
+            
             var model = new ContactModel
             {
                 Id = id,
@@ -184,10 +182,13 @@ namespace CustomerService.Controllers
                 Email = contactEntity.GetAttributeValue<string>("emailaddress1"),
                 Phone = contactEntity.GetAttributeValue<string>("mobilephone"),
                 EntityImage = contactEntity.GetAttributeValue<byte[]>("entityimage"),
-                AnyDoc = _dataverseService.DownloadFile(_dataverseService,contactEntity,"sid_uploaddoc"),
                 Interest = interestArray
              };
-    
+
+            if (contactEntity.GetAttributeValue<Guid>("sid_uploaddoc").ToString() != string.Empty)
+            {
+                model.DocName = contactEntity.GetAttributeValue<string>("sid_uploaddoc_name");
+            }
 
             var accounts = _dataverseService.RetrieveEtities("account", new ColumnSet("name", "accountid"));
 
@@ -203,10 +204,12 @@ namespace CustomerService.Controllers
         public IActionResult Edit(ContactModel model, IFormFile anyDoc)
         {
             try
-            {
+                    {
                 ModelState.Remove(nameof(ContactModel.CreatedOn));
                 ModelState.Remove(nameof(ContactModel.ShowInterest));
                 ModelState.Remove(nameof(ContactModel.Interest));
+                ModelState.Remove(nameof(ContactModel.DocName));
+                ModelState.Remove(nameof(ContactModel.AnyDoc));
                 if (ModelState.IsValid)
                 {
                     Entity newContact = new Entity("contact");
@@ -220,25 +223,56 @@ namespace CustomerService.Controllers
                         newContact["parentcustomerid"] = new EntityReference("account", Guid.Parse(model.Account));
                     }
                     newContact["sid_interest"] = model.Interest.Length == 0 ? null : new OptionSetValueCollection(Array.ConvertAll(model.Interest, value => new OptionSetValue(value)));
+
                     if (anyDoc != null && anyDoc.Length > 0)
                     {
                         using (var ms = new MemoryStream())
                         {
                             anyDoc.CopyTo(ms);
                             model.AnyDoc = ms.ToArray();
-                            if (anyDoc.ContentType == "image/jpeg")
+                            if (anyDoc.ContentType == "image/jpeg" || anyDoc.ContentType == "image/png" || anyDoc.ContentType == "image/jpg")
                             {
                                 newContact["entityimage"] = model.AnyDoc;
+                                _dataverseService.UpdateEntity(newContact);
                             }
                             else
                             {
-                                newContact["sid_uploaddoc"] = model.AnyDoc;
+                                string fileName = anyDoc.FileName;
+                                var blockSize = 4194304; // Block size for uploading 4194304 ~ 4MB
+                                var blockIds = new List<string>();
+                                EntityReference entityReference = new EntityReference("contact", model.Id);
+                                var initializeFileUploadRequest = new InitializeFileBlocksUploadRequest
+                                {
+                                    FileAttributeName = "sid_uploaddoc", // Replace with the actual field schema name
+                                    Target = entityReference,
+                                    FileName = fileName
+                                };
+
+                                var fileUploadResponse = _dataverseService.ExecuteFileBlockUpload(initializeFileUploadRequest);
+                                for (int i = 0; i < Math.Ceiling(model.AnyDoc.Length / Convert.ToDecimal(blockSize)); i++)
+                                {
+                                    var blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()));
+                                    blockIds.Add(blockId);
+
+                                    var blockData = model.AnyDoc.Skip(i * blockSize).Take(blockSize).ToArray();
+                                    var blockRequest = new UploadBlockRequest()
+                                    {
+                                        FileContinuationToken = fileUploadResponse.FileContinuationToken,
+                                        BlockId = blockId,
+                                        BlockData = blockData
+                                    };
+
+
+                                    var blockResponse = _dataverseService.ExecuteUploadBlock(blockRequest);
+                                }
+
+                                _dataverseService.CommitOperation(blockIds, fileUploadResponse.FileContinuationToken, fileName, anyDoc.ContentType);
+                                _dataverseService.UpdateEntity(newContact);
                             }
                         }
 
                     }
 
-                    _dataverseService.UpdateEntity(newContact);
                     TempData["success"] = "Contact updated successfully!";
                     return RedirectToAction("Index");
                 }
@@ -278,5 +312,28 @@ namespace CustomerService.Controllers
                 throw;
             }
         }
+
+
+        public IActionResult Download(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                return NotFound();
+            }
+
+            var contactEntity = _dataverseService.RetrieveEntity("contact", id, new ColumnSet("sid_uploaddoc", "sid_uploaddoc_name"));
+            EntityReference er = new EntityReference("contact", id);
+
+            byte[] fileBytes = _dataverseService.DownloadFile(er, "sid_uploaddoc");
+
+            if(fileBytes == null || fileBytes.Length ==0)
+            {
+                return NotFound("file not found or is Empty!");
+            }
+
+            string fileName = contactEntity.GetAttributeValue<string>("sid_uploaddoc_name");
+
+            return File(fileBytes, "application/octet-stream", fileName);
+        } 
     }
 }

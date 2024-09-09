@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "bootstrap-select@1.13.18",
+      "destination": "wwwroot/bootstrap-select/"
+    },
+    {
+      "library": "bootstrap@4.6.2",
+      "destination": "wwwroot/bootstrap/",
+      "files": [
+        "js/bootstrap.bundle.min.js"
+      ]
+    }
+  ]
+}

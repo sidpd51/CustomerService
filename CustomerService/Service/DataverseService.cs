@@ -305,9 +305,15 @@ namespace CustomerService.Service
                 throw;
             }
         }
-       
-        private static byte[] DownloadFile(
-                    IOrganizationService service,
+
+        /// <summary>
+        /// Downloads a file or image
+        /// </summary>
+        /// <param name="service">The service</param>
+        /// <param name="entityReference">A reference to the record with the file or image column</param>
+        /// <param name="attributeName">The name of the file or image column</param>
+        /// <returns></returns>
+        public  byte[] DownloadFile(
                     EntityReference entityReference,
                     string attributeName)
         {
@@ -318,7 +324,7 @@ namespace CustomerService.Service
             };
 
             var initializeFileBlocksDownloadResponse =
-                  (InitializeFileBlocksDownloadResponse)service.Execute(initializeFileBlocksDownloadRequest);
+                  (InitializeFileBlocksDownloadResponse)_serviceClient.Execute(initializeFileBlocksDownloadRequest);
 
             string fileContinuationToken = initializeFileBlocksDownloadResponse.FileContinuationToken;
             long fileSizeInBytes = initializeFileBlocksDownloadResponse.FileSizeInBytes;
@@ -347,7 +353,7 @@ namespace CustomerService.Service
 
                 // Send the request
                 var downloadBlockResponse =
-                         (DownloadBlockResponse)service.Execute(downLoadBlockRequest);
+                         (DownloadBlockResponse)_serviceClient.Execute(downLoadBlockRequest);
 
                 // Add the block returned to the list
                 fileBytes.AddRange(downloadBlockResponse.Data);
